@@ -113,7 +113,7 @@ function populateCurrencies(codes) {
   els.toCurrencySearch.value = currencyDisplay(selectedToCurrency);
 }
 
-function resolveCurrencyFromInput(value) {
+function resolveCurrencyFromInput(value, { strict = false } = {}) {
   if (!ratesData) return null;
   const raw = value.trim();
   if (!raw) return null;
@@ -126,19 +126,24 @@ function resolveCurrencyFromInput(value) {
   const byPrefix = raw.split("—")[0]?.trim().toUpperCase();
   if (byPrefix && codes.includes(byPrefix)) return byPrefix;
 
+  const exactDisplay = codes.find((code) => currencyDisplay(code).toUpperCase() === upper);
+  if (exactDisplay) return exactDisplay;
+
+  if (strict) return null;
+
   return codes.find((code) => currencyDisplay(code).toUpperCase().includes(upper)) || null;
 }
 
-function applyCurrencySearch(searchValue, target) {
-  const match = resolveCurrencyFromInput(searchValue);
+function applyCurrencySearch(searchValue, target, { strict = false, commit = false } = {}) {
+  const match = resolveCurrencyFromInput(searchValue, { strict });
   if (!match) return;
 
   if (target === "from") {
     selectedFromCurrency = match;
-    els.fromCurrencySearch.value = currencyDisplay(match);
+    if (commit) els.fromCurrencySearch.value = currencyDisplay(match);
   } else {
     selectedToCurrency = match;
-    els.toCurrencySearch.value = currencyDisplay(match);
+    if (commit) els.toCurrencySearch.value = currencyDisplay(match);
   }
   convertCurrency();
 }
@@ -289,10 +294,18 @@ function convertUnits() {
 
 function bindEvents() {
   els.amount.addEventListener("input", convertCurrency);
-  els.fromCurrencySearch.addEventListener("input", (e) => applyCurrencySearch(e.target.value, "from"));
-  els.toCurrencySearch.addEventListener("input", (e) => applyCurrencySearch(e.target.value, "to"));
-  els.fromCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, "from"));
-  els.toCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, "to"));
+  els.fromCurrencySearch.addEventListener("input", (e) => applyCurrencySearch(e.target.value, "from", { strict: true }));
+  els.toCurrencySearch.addEventListener("input", (e) => applyCurrencySearch(e.target.value, "to", { strict: true }));
+
+  els.fromCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, "from", { commit: true }));
+  els.toCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, "to", { commit: true }));
+
+  els.fromCurrencySearch.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") applyCurrencySearch(e.target.value, "from", { commit: true });
+  });
+  els.toCurrencySearch.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") applyCurrencySearch(e.target.value, "to", { commit: true });
+  });
 
   els.swapBtn.addEventListener("click", () => {
     const from = selectedFromCurrency;
