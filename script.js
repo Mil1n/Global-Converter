@@ -58,8 +58,11 @@ const els = {
   liveClock: document.getElementById("liveClock"),
   dataStatus: document.getElementById("dataStatus"),
   amount: document.getElementById("amount"),
+  fromCurrencySearch: document.getElementById("fromCurrencySearch"),
+  toCurrencySearch: document.getElementById("toCurrencySearch"),
   fromCurrency: document.getElementById("fromCurrency"),
   toCurrency: document.getElementById("toCurrency"),
+  currencyList: document.getElementById("currencyList"),
   swapBtn: document.getElementById("swapBtn"),
   currencyResult: document.getElementById("currencyResult"),
   ratesInfo: document.getElementById("ratesInfo"),
@@ -89,6 +92,7 @@ function currencyDisplay(code) {
 
 function populateCurrencies(codes) {
   const sorted = [...codes].sort();
+  els.currencyList.innerHTML = "";
   [els.fromCurrency, els.toCurrency].forEach((select) => {
     select.innerHTML = "";
     sorted.forEach((code) => {
@@ -99,8 +103,32 @@ function populateCurrencies(codes) {
     });
   });
 
+
+
+  sorted.forEach((code) => {
+    const option = document.createElement("option");
+    option.value = `${code} — ${currencyDisplay(code).replace(`${code} — `, "")}`;
+    els.currencyList.append(option);
+  });
   els.fromCurrency.value = sorted.includes("USD") ? "USD" : sorted[0];
   els.toCurrency.value = sorted.includes("EUR") ? "EUR" : sorted[1] || sorted[0];
+
+  els.fromCurrencySearch.value = currencyDisplay(els.fromCurrency.value);
+  els.toCurrencySearch.value = currencyDisplay(els.toCurrency.value);
+}
+
+function applyCurrencySearch(searchValue, selectEl, searchEl) {
+  const query = searchValue.trim().toUpperCase();
+  if (!query || !ratesData) return;
+
+  const codes = Object.keys(ratesData.rates);
+  const match = codes.find((code) => code === query) ||
+    codes.find((code) => currencyDisplay(code).toUpperCase().includes(query));
+
+  if (!match) return;
+  selectEl.value = match;
+  searchEl.value = currencyDisplay(match);
+  convertCurrency();
 }
 
 function convertCurrency() {
@@ -249,12 +277,21 @@ function convertUnits() {
 
 function bindEvents() {
   els.amount.addEventListener("input", convertCurrency);
-  [els.fromCurrency, els.toCurrency].forEach((el) => el.addEventListener("change", convertCurrency));
+  [els.fromCurrency, els.toCurrency].forEach((el) => el.addEventListener("change", () => {
+    if (el === els.fromCurrency) els.fromCurrencySearch.value = currencyDisplay(el.value);
+    if (el === els.toCurrency) els.toCurrencySearch.value = currencyDisplay(el.value);
+    convertCurrency();
+  }));
+
+  els.fromCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, els.fromCurrency, els.fromCurrencySearch));
+  els.toCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, els.toCurrency, els.toCurrencySearch));
 
   els.swapBtn.addEventListener("click", () => {
     const from = els.fromCurrency.value;
     els.fromCurrency.value = els.toCurrency.value;
     els.toCurrency.value = from;
+    els.fromCurrencySearch.value = currencyDisplay(els.fromCurrency.value);
+    els.toCurrencySearch.value = currencyDisplay(els.toCurrency.value);
     convertCurrency();
   });
 

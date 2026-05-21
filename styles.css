@@ -59,8 +59,10 @@ h1 { margin: 0; font-size: clamp(1.6rem, 3.8vw, 2.3rem); }
 .grid { display: grid; gap: 12px; }
 .currency-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
 .units-grid { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
-label { display: grid; gap: 6px; font-size: 0.92rem; color: #c8d5f1; }
+label { display: grid; gap: 6px; font-size: 0.92rem; color: #c8d5f1; min-width: 0; }
 input, select, .btn {
+  width: 100%;
+  min-width: 0;
   border: 1px solid rgba(148, 163, 184, 0.34);
   border-radius: 13px;
   color: var(--text);
@@ -95,4 +97,15 @@ input:focus, select:focus {
   body { padding: 12px; }
   .app__header, .card { padding: 16px; border-radius: 16px; }
   .clock, .status { text-align: left; }
+}
+
+
+/* Prevent long option text from pushing layout outside card */
+.currency-grid > *,
+.units-grid > * {
+  min-width: 0;
+}
+
+select {
+  text-overflow: ellipsis;
 }
