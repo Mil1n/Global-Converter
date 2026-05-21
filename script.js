@@ -107,6 +107,10 @@ function convertCurrency() {
   if (!ratesData) return;
 
   const amount = Number(els.amount.value);
+  if (amount < 0) {
+    els.currencyResult.textContent = "Сумма не может быть отрицательной.";
+    return;
+  }
   const from = els.fromCurrency.value;
   const to = els.toCurrency.value;
 
@@ -217,6 +221,10 @@ function convertUnits() {
   const categoryKey = els.unitCategory.value;
   const category = unitDefinitions[categoryKey];
   const value = Number(els.unitAmount.value);
+  if (categoryKey !== "temperature" && value < 0) {
+    els.unitResult.textContent = "Для этой категории значение не должно быть отрицательным.";
+    return;
+  }
   const from = els.fromUnit.value;
   const to = els.toUnit.value;
 
@@ -240,7 +248,8 @@ function convertUnits() {
 }
 
 function bindEvents() {
-  [els.amount, els.fromCurrency, els.toCurrency].forEach((el) => el.addEventListener("input", convertCurrency));
+  els.amount.addEventListener("input", convertCurrency);
+  [els.fromCurrency, els.toCurrency].forEach((el) => el.addEventListener("change", convertCurrency));
 
   els.swapBtn.addEventListener("click", () => {
     const from = els.fromCurrency.value;
@@ -250,7 +259,8 @@ function bindEvents() {
   });
 
   els.unitCategory.addEventListener("change", populateUnitsForCategory);
-  [els.unitAmount, els.fromUnit, els.toUnit].forEach((el) => el.addEventListener("input", convertUnits));
+  els.unitAmount.addEventListener("input", convertUnits);
+  [els.fromUnit, els.toUnit].forEach((el) => el.addEventListener("change", convertUnits));
 }
 
 function init() {
