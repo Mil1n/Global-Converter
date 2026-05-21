@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Global Converter — Валюты и единицы</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <main class="app">
+      <header class="app__header">
+        <div>
+          <h1>Global Converter</h1>
+          <p class="subtitle">Валюты + единицы, realtime и офлайн-резерв</p>
+        </div>
+        <div class="header-right">
+          <div class="clock" id="liveClock">--:--:--</div>
+          <div class="status" id="dataStatus">Загрузка курсов...</div>
+        </div>
+      </header>
+
+      <section class="card currency-card">
+        <div class="card__title">💱 Конвертер валют</div>
+        <div class="grid currency-grid">
+          <label>Сумма <input id="amount" type="number" min="0" step="any" value="1" /></label>
+          <label>Из <select id="fromCurrency"></select></label>
+          <label>В <select id="toCurrency"></select></label>
+        </div>
+        <div class="row-actions">
+          <button id="swapBtn" class="btn">↔ Поменять местами</button>
+        </div>
+        <div id="currencyResult" class="result">—</div>
+        <div id="ratesInfo" class="muted">—</div>
+      </section>
+
+      <section class="card">
+        <div class="card__title">📏 Конвертер единиц</div>
+        <div class="grid units-grid">
+          <label>Категория <select id="unitCategory"></select></label>
+          <label>Значение <input id="unitAmount" type="number" step="any" value="1" /></label>
+          <label>Из <select id="fromUnit"></select></label>
+          <label>В <select id="toUnit"></select></label>
+        </div>
+        <div id="unitResult" class="result">—</div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
