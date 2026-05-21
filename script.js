@@ -53,6 +53,8 @@ const unitDefinitions = {
 };
 
 let ratesData = null;
+let selectedFromCurrency = "USD";
+let selectedToCurrency = "EUR";
 
 const els = {
   liveClock: document.getElementById("liveClock"),
@@ -60,8 +62,6 @@ const els = {
   amount: document.getElementById("amount"),
   fromCurrencySearch: document.getElementById("fromCurrencySearch"),
   toCurrencySearch: document.getElementById("toCurrencySearch"),
-  fromCurrency: document.getElementById("fromCurrency"),
-  toCurrency: document.getElementById("toCurrency"),
   currencyList: document.getElementById("currencyList"),
   swapBtn: document.getElementById("swapBtn"),
   currencyResult: document.getElementById("currencyResult"),
@@ -81,10 +81,16 @@ function updateClock() {
   });
 }
 
+function capitalizeFirst(text) {
+  if (!text) return text;
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 function currencyDisplay(code) {
   try {
     const display = currencyNames.of(code);
-    return display ? `${code} — ${display}` : code;
+    const normalized = display ? capitalizeFirst(display) : code;
+    return `${code} — ${normalized}`;
   } catch {
     return code;
   }
@@ -93,41 +99,47 @@ function currencyDisplay(code) {
 function populateCurrencies(codes) {
   const sorted = [...codes].sort();
   els.currencyList.innerHTML = "";
-  [els.fromCurrency, els.toCurrency].forEach((select) => {
-    select.innerHTML = "";
-    sorted.forEach((code) => {
-      const option = document.createElement("option");
-      option.value = code;
-      option.textContent = currencyDisplay(code);
-      select.append(option);
-    });
-  });
-
-
 
   sorted.forEach((code) => {
     const option = document.createElement("option");
-    option.value = `${code} — ${currencyDisplay(code).replace(`${code} — `, "")}`;
+    option.value = currencyDisplay(code);
     els.currencyList.append(option);
   });
-  els.fromCurrency.value = sorted.includes("USD") ? "USD" : sorted[0];
-  els.toCurrency.value = sorted.includes("EUR") ? "EUR" : sorted[1] || sorted[0];
 
-  els.fromCurrencySearch.value = currencyDisplay(els.fromCurrency.value);
-  els.toCurrencySearch.value = currencyDisplay(els.toCurrency.value);
+  selectedFromCurrency = sorted.includes("USD") ? "USD" : sorted[0];
+  selectedToCurrency = sorted.includes("EUR") ? "EUR" : sorted[1] || sorted[0];
+
+  els.fromCurrencySearch.value = currencyDisplay(selectedFromCurrency);
+  els.toCurrencySearch.value = currencyDisplay(selectedToCurrency);
 }
 
-function applyCurrencySearch(searchValue, selectEl, searchEl) {
-  const query = searchValue.trim().toUpperCase();
-  if (!query || !ratesData) return;
-
+function resolveCurrencyFromInput(value) {
+  if (!ratesData) return null;
+  const raw = value.trim();
+  if (!raw) return null;
+  const upper = raw.toUpperCase();
   const codes = Object.keys(ratesData.rates);
-  const match = codes.find((code) => code === query) ||
-    codes.find((code) => currencyDisplay(code).toUpperCase().includes(query));
 
+  const directCode = raw.match(/^[A-Za-z]{3}$/) ? upper : null;
+  if (directCode && codes.includes(directCode)) return directCode;
+
+  const byPrefix = raw.split("—")[0]?.trim().toUpperCase();
+  if (byPrefix && codes.includes(byPrefix)) return byPrefix;
+
+  return codes.find((code) => currencyDisplay(code).toUpperCase().includes(upper)) || null;
+}
+
+function applyCurrencySearch(searchValue, target) {
+  const match = resolveCurrencyFromInput(searchValue);
   if (!match) return;
-  selectEl.value = match;
-  searchEl.value = currencyDisplay(match);
+
+  if (target === "from") {
+    selectedFromCurrency = match;
+    els.fromCurrencySearch.value = currencyDisplay(match);
+  } else {
+    selectedToCurrency = match;
+    els.toCurrencySearch.value = currencyDisplay(match);
+  }
   convertCurrency();
 }
 
@@ -139,8 +151,8 @@ function convertCurrency() {
     els.currencyResult.textContent = "Сумма не может быть отрицательной.";
     return;
   }
-  const from = els.fromCurrency.value;
-  const to = els.toCurrency.value;
+  const from = selectedFromCurrency;
+  const to = selectedToCurrency;
 
   if (!Number.isFinite(amount)) {
     els.currencyResult.textContent = "Введите корректное число.";
@@ -277,21 +289,17 @@ function convertUnits() {
 
 function bindEvents() {
   els.amount.addEventListener("input", convertCurrency);
-  [els.fromCurrency, els.toCurrency].forEach((el) => el.addEventListener("change", () => {
-    if (el === els.fromCurrency) els.fromCurrencySearch.value = currencyDisplay(el.value);
-    if (el === els.toCurrency) els.toCurrencySearch.value = currencyDisplay(el.value);
-    convertCurrency();
-  }));
-
-  els.fromCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, els.fromCurrency, els.fromCurrencySearch));
-  els.toCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, els.toCurrency, els.toCurrencySearch));
+  els.fromCurrencySearch.addEventListener("input", (e) => applyCurrencySearch(e.target.value, "from"));
+  els.toCurrencySearch.addEventListener("input", (e) => applyCurrencySearch(e.target.value, "to"));
+  els.fromCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, "from"));
+  els.toCurrencySearch.addEventListener("change", (e) => applyCurrencySearch(e.target.value, "to"));
 
   els.swapBtn.addEventListener("click", () => {
-    const from = els.fromCurrency.value;
-    els.fromCurrency.value = els.toCurrency.value;
-    els.toCurrency.value = from;
-    els.fromCurrencySearch.value = currencyDisplay(els.fromCurrency.value);
-    els.toCurrencySearch.value = currencyDisplay(els.toCurrency.value);
+    const from = selectedFromCurrency;
+    selectedFromCurrency = selectedToCurrency;
+    selectedToCurrency = from;
+    els.fromCurrencySearch.value = currencyDisplay(selectedFromCurrency);
+    els.toCurrencySearch.value = currencyDisplay(selectedToCurrency);
     convertCurrency();
   });
 
